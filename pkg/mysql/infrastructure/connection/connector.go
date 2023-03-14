@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cenkalti/backoff/v4"
@@ -29,6 +30,7 @@ type Connector interface {
 	ClientContext() ClientContext
 	TransactionalClient() TransactionalClient
 	TransactionalClientContext() TransactionalClientContext
+	Connection(ctx context.Context) (TransactionalConnection, error)
 
 	Open(dsn DSN, maxConnections int) error
 	Close() error
@@ -40,6 +42,14 @@ func NewConnector() Connector {
 
 type connector struct {
 	db *sqlx.DB
+}
+
+func (c *connector) Connection(ctx context.Context) (TransactionalConnection, error) {
+	conn, err := c.db.Connx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &transactionalConnection{conn}, nil
 }
 
 func (c *connector) Client() Client {

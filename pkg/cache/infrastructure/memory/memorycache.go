@@ -19,10 +19,11 @@ func (v *value) isExpire() bool {
 	return false
 }
 
-func NewMemoryCache(cleanupInterval time.Duration) memory.Cache {
+func NewMemoryCache(cleanupInterval *time.Duration) memory.Cache {
 	return &memoryCache{
-		cache:    make(map[interface{}]value),
-		stopChan: make(chan bool),
+		cache:           make(map[interface{}]value),
+		stopChan:        make(chan bool),
+		cleanupInterval: cleanupInterval,
 	}
 }
 
@@ -32,7 +33,7 @@ type memoryCache struct {
 
 	stopChan chan bool
 
-	cleanupInterval time.Duration
+	cleanupInterval *time.Duration
 }
 
 func (c *memoryCache) Get(key interface{}) (interface{}, error) {
@@ -66,13 +67,16 @@ func (c *memoryCache) Delete(key interface{}) {
 }
 
 func (c *memoryCache) Start() {
+	if c.cleanupInterval == nil {
+		return
+	}
 	go func() {
 		for {
 			select {
 			case <-c.stopChan:
 				return
 			default:
-				<-time.After(c.cleanupInterval)
+				<-time.After(*c.cleanupInterval)
 				c.cleanup()
 			}
 		}

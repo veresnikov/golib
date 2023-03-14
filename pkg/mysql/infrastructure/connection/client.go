@@ -31,7 +31,6 @@ type ClientContext interface {
 
 	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
-	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
 }
 
 type Transaction interface {
@@ -52,8 +51,13 @@ type TransactionalClient interface {
 }
 
 type TransactionalClientContext interface {
-	Client
-	BeginTransactionContext(ctx context.Context) (TransactionContext, error)
+	ClientContext
+	BeginTransactionContext(ctx context.Context, opts *sql.TxOptions) (TransactionContext, error)
+}
+
+type TransactionalConnection interface {
+	TransactionalClientContext
+	ReleaseConnection() error
 }
 
 type transactionalClient struct {
@@ -64,6 +68,18 @@ func (c *transactionalClient) BeginTransaction() (Transaction, error) {
 	return c.Beginx()
 }
 
-func (c *transactionalClient) BeginTransactionContext(ctx context.Context) (TransactionContext, error) {
-	return c.BeginTxx(ctx, nil)
+func (c *transactionalClient) BeginTransactionContext(ctx context.Context, opts *sql.TxOptions) (TransactionContext, error) {
+	return c.BeginTxx(ctx, opts)
+}
+
+type transactionalConnection struct {
+	*sqlx.Conn
+}
+
+func (c *transactionalConnection) BeginTransactionContext(ctx context.Context, opts *sql.TxOptions) (TransactionContext, error) {
+	return c.BeginTxx(ctx, opts)
+}
+
+func (c *transactionalConnection) ReleaseConnection() error {
+	return c.Conn.Close()
 }
