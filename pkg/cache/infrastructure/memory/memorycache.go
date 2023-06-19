@@ -50,7 +50,7 @@ func (c *memoryCache) Get(key interface{}) (interface{}, error) {
 	return v.data, nil
 }
 
-func (c *memoryCache) Set(key interface{}, data interface{}, ttl *time.Time) {
+func (c *memoryCache) Set(key, data interface{}, ttl *time.Time) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

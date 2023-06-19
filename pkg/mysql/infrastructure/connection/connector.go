@@ -3,8 +3,10 @@ package connection
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/cenkalti/backoff/v4"
+	// nolint
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -31,6 +33,7 @@ type Connector interface {
 	TransactionalClient() TransactionalClient
 	TransactionalClientContext() TransactionalClientContext
 	Connection(ctx context.Context) (TransactionalConnection, error)
+	Migrator(fileSystem http.FileSystem) Migrator
 
 	Open(dsn DSN, maxConnections int) error
 	Close() error
@@ -42,6 +45,10 @@ func NewConnector() Connector {
 
 type connector struct {
 	db *sqlx.DB
+}
+
+func (c *connector) Migrator(fileSystem http.FileSystem) Migrator {
+	return NewMigrator(c.db, fileSystem)
 }
 
 func (c *connector) Connection(ctx context.Context) (TransactionalConnection, error) {

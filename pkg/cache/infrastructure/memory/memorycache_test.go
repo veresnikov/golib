@@ -30,7 +30,7 @@ func TestMemoryCache_GetSet(t *testing.T) {
 	cache := &memoryCache{
 		cache:           make(map[interface{}]value),
 		stopChan:        make(chan bool),
-		cleanupInterval: time.Microsecond * 10,
+		cleanupInterval: toOptionalDuration(time.Microsecond * 10),
 	}
 	go func() {
 		cache.Start()
@@ -54,7 +54,7 @@ func TestMemoryCache_Delete(t *testing.T) {
 	cache := &memoryCache{
 		cache:           make(map[interface{}]value),
 		stopChan:        make(chan bool),
-		cleanupInterval: time.Microsecond * 10,
+		cleanupInterval: toOptionalDuration(time.Microsecond * 10),
 	}
 	go func() {
 		cache.Start()
@@ -75,11 +75,11 @@ func TestMemoryCache_Delete(t *testing.T) {
 	}
 }
 
-func TestMemoryCache_Cleanup(t *testing.T) {
+func TestMemoryCache_Cleanup(_ *testing.T) {
 	cache := &memoryCache{
 		cache:           make(map[interface{}]value),
 		stopChan:        make(chan bool),
-		cleanupInterval: time.Microsecond * 10,
+		cleanupInterval: toOptionalDuration(time.Microsecond * 10),
 	}
 	go func() {
 		cache.Start()
@@ -102,4 +102,8 @@ func TestMemoryCache_Cleanup(t *testing.T) {
 func getTTL(ttl time.Duration) *time.Time {
 	result := time.Now().Add(ttl)
 	return &result
+}
+
+func toOptionalDuration(duration time.Duration) *time.Duration {
+	return &duration
 }
